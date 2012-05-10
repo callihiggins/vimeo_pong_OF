@@ -4,6 +4,12 @@
 void testApp::setup() {
 	ofSetVerticalSync(true);
 	ofBackgroundHex(0xfdefc2);
+    
+    ofTrueTypeFont::setGlobalDpi(72);
+    
+	verdana22.loadFont("verdana.ttf", 22, true, true);
+	verdana22.setLineHeight(18.0f);
+	verdana22.setLetterSpacing(1.037);
 
 	box2d.init();
 	box2d.setGravity(0, 10);
@@ -11,6 +17,9 @@ void testApp::setup() {
 	box2d.setFPS(30.0);
     box2d.createBounds(0, 0,ofGetScreenWidth(), 0);
 
+    score1 = 0;
+    score2 = 0;
+    counter = 0;
 	// register the listener so that we get the events
 	ofAddListener(box2d.contactStartEvents, this, &testApp::contactStart);
 	ofAddListener(box2d.contactEndEvents, this, &testApp::contactEnd);
@@ -45,17 +54,28 @@ void testApp::setup() {
 	}
     vimeologo.loadImage("images/vimeo_logo.png");
     
-    for(int i=0; i < 12; i++){
+    for(int i=0; i< 13; i++){
+        ofVideoPlayer v;
+        v.loadMovie("movies/fingers" + ofToString(i) +".mov");
+        v.play();
+        wvideos.push_back(v);
+    }
+
+
+    
+    for(int i=0; i < 13; i++){
        WinningVideo v;
         v.setPhysics(1.0, 0.5, 0.3);
        // v.body->SetUserData(v);
-        v.setup(box2d.getWorld(), float(i*100 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
+        v.setup(box2d.getWorld(), float(i*90 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
         v.setupTheCustomData();
+        v.movie = &wvideos[i];
         winningvideos.push_back(v);
         
     }
+   
 }
-
+    
 
 //--------------------------------------------------------------
 void testApp::contactStart(ofxBox2dContactArgs &e) {
@@ -131,6 +151,9 @@ void testApp::contactEnd(ofxBox2dContactArgs &e) {
 void testApp::update() {
 	
 	box2d.update();
+    for(int i=0; i<wvideos.size(); i++){ 
+    wvideos[i].idleMovie();
+    }
     
     for(int i=0; i<paddles.size(); i++) {
         paddles[i].setPosition(paddles[i].getPosition().x, mouseY);
@@ -139,12 +162,22 @@ void testApp::update() {
     for(int i=0; i<circles.size(); i++) {
         b2Vec2 p = circles[i].body->GetLocalCenter();
         circles[i].body->ApplyForce(b2Vec2( 0, -3 ), p);
+        if(circles[i].getPosition().x > ofGetWidth()){
+            score2 ++;
+            box2d.getWorld()->DestroyBody(circles[i].body);
+            circles.erase(circles.begin() + i);
+        }
+        if(circles[i].getPosition().x < 0){
+            score1 ++;
+             box2d.getWorld()->DestroyBody(circles[i].body);
+            circles.erase(circles.begin() + i);
+        }
 	}
     for(int i=0; i<winningvideos.size(); i++) {
         Data * theData = (Data*)winningvideos[i].getData();
         if(theData->hit == true){
-             printf("hit! %d\n", i);
-            for(int j=0; j < 12; j++){
+            
+            for(int j=0; j < 13; j++){
                 NominatedVideo v;
                 v.setPhysics(1.0, 0.0, 0.5);
                 //            // v.body->SetUserData(v);
@@ -158,13 +191,42 @@ void testApp::update() {
           box2d.getWorld()->DestroyBody(winningvideos[i].body);
             winningvideos.erase(winningvideos.begin()+i);   //HOW TO DELETE FROM VECTOR LIST?
         }
+  	}
+
+
+    if (counter == 199) {
+        score1 = 0;
+        score2 = 0;
+        counter = 0;
+       
+        vector <NominatedVideo>::iterator iter1 = nomvideos.begin();  
+        while (iter1 != nomvideos.end()) {  
+            iter1->draw();  
+                box2d.world->DestroyBody(iter1->body);  
+                iter1 = nomvideos.erase(iter1);  
+        }  
+        vector <WinningVideo>::iterator iter2 = winningvideos.begin();  
+        while (iter2 != winningvideos.end()) {  
+            iter2->draw();  
+            box2d.world->DestroyBody(iter2->body);  
+            iter2 = winningvideos.erase(iter2);  
+        }  
+        vector <ofxBox2dCircle>::iterator iter3 = circles.begin();  
+        while (iter3 != circles.end()) {  
+            iter3->draw();  
+            box2d.world->DestroyBody(iter3->body);  
+            iter3 = circles.erase(iter3);  
+        }  
         
-
-           
-	}
-
-
-	
+        for(int i=0; i < 13; i++){
+            WinningVideo v;
+            v.setPhysics(1.0, 0.5, 0.3);
+            // v.body->SetUserData(v);
+            v.setup(box2d.getWorld(), float(i*90 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
+            v.setupTheCustomData();
+            winningvideos.push_back(v);
+        }
+    }   
 }
 
 
@@ -195,15 +257,24 @@ void testApp::draw() {
     
     for(int i=0; i<nomvideos.size(); i++) {
         nomvideos[i].draw();
-        
 	}
+    if (score1 > 4 && counter < 200) {
+        ofSetColor(245, 58, 135);
+        verdana22.drawString("PLAYER ONE WINS", ofGetWidth()/2, ofGetHeight()/2);        
+        counter++;
+    }
+    if (score2 > 4 && counter < 200) {
+        ofSetColor(245, 58, 135);
+        verdana22.drawString("PLAYER TWO WINS", ofGetWidth()/2, ofGetHeight()/2);
+        counter++;
+    }
 
-    
-	
+   	
 
 	string info = "";
 	info += "FPS: "+ofToString(ofGetFrameRate(), 1)+"\n";
-    info += "FPS: "+ofToString(circles.size(), 1)+"\n";
+    info += "Player 1 score: "+ofToString(score1, 1)+"\n";
+    info += "Player 2 score: "+ofToString(score2, 1)+"\n";
 	ofSetHexColor(0x444342);
 	ofDrawBitmapString(info, 30, 30);
 }

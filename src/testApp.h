@@ -18,7 +18,7 @@ public:
 class NominatedVideo : public ofxBox2dRect {
 	
 public:
-	
+    
     
     void setupTheCustomData(int i) {
         static int colors[] = {0xcae72b, 0xe63b8f, 0x2bb0e7, 0x00FFFF, 0xFF00FF, 0x99FF66, 0xFFCCFF, 0x9900FF, 0x33CCCC, 0x00FFCC, 0x666633, 0xCC0066};
@@ -31,9 +31,10 @@ public:
         theData->id = i;
         theData->soundID = ofRandom(0, N_SOUNDS);
         theData->hit	= false;		
-        
         printf("setting the custom data!\n");
         i ++;
+        
+
     }
     
     void draw() {
@@ -50,10 +51,9 @@ public:
             ofPushMatrix();
             ofTranslate(getPosition());
             ofRotateZ(getRotation());
-            ofSetColor(theData->color);
+           // ofSetColor(theData->color);
             ofSetRectMode(OF_RECTMODE_CENTER);
-            ofFill();
-            ofRect(0,0,width, height);
+            ofFill();  
             ofDrawBitmapString(ofToString(theData->id), -5, 5);
             ofPopMatrix();
         }
@@ -69,8 +69,9 @@ public:
 class WinningVideo : public ofxBox2dRect {
 	
 public:
-	
-	void setupTheCustomData() {
+        ofVideoPlayer * movie;
+		
+    void setupTheCustomData() {
 		static int i;
 		static int colors[] = {0xcae72b, 0xe63b8f, 0x2bb0e7, 0x00FFFF, 0xFF00FF, 0x99FF66, 0xFFCCFF, 0x9900FF, 0x33CCCC, 0x00FFCC, 0x666633, 0xCC0066};
 				// we are using a Data pointer because 
@@ -85,9 +86,11 @@ public:
 		theData->type= 2;
 				printf("setting the custom data!\n");
 		i ++;
+        i = i% 13;
 	}
 	
 	void draw() {
+        
 		Data* theData = (Data*)getData();
 		if(theData) {
 			
@@ -105,6 +108,7 @@ public:
 			ofFill();
 			ofRect(0, 0, width,width);	
 			ofSetColor(255);
+            movie->draw(0,0,width,width);
 			ofDrawBitmapString(ofToString(theData->id), -5, 5);
 			ofPopMatrix();
 		}
@@ -141,6 +145,11 @@ public:
 	vector		<ofxBox2dRect>	paddles;
 	vector		<WinningVideo>	winningvideos;
     vector		<NominatedVideo>	nomvideos;
+    vector		<ofVideoPlayer>	wvideos;
+    ofTrueTypeFont	verdana22;
     ofImage vimeologo;
+    int score1, score2, counter;
+
+
 };
 
