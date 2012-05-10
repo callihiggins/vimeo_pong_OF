@@ -7,7 +7,12 @@ void testApp::setup() {
     
     ofTrueTypeFont::setGlobalDpi(72);
     
-	verdana22.loadFont("verdana.ttf", 22, true, true);
+	receiver.setup( PORT );
+    loaduser = false;
+    user1load = false;
+    user2load = false;
+    
+    verdana22.loadFont("verdana.ttf", 22, true, true);
 	verdana22.setLineHeight(18.0f);
 	verdana22.setLetterSpacing(1.037);
 
@@ -53,7 +58,6 @@ void testApp::setup() {
 		sound[i].setLoop(false);
 	}
     vimeologo.loadImage("images/vimeo_logo.png");
-    
     for(int i=0; i< 13; i++){
         ofVideoPlayer v;
         v.loadMovie("movies/fingers" + ofToString(i) +".mov");
@@ -151,13 +155,86 @@ void testApp::contactEnd(ofxBox2dContactArgs &e) {
 void testApp::update() {
 	
 	box2d.update();
+    
+    while( receiver.hasWaitingMessages() )
+	{
+		// get the next message
+		ofxOscMessage m;
+		receiver.getNextMessage( &m );
+		
+		if ( m.getAddress() == "/joysticks" )
+		{
+			// both the arguments are int32's
+			joystick1 = m.getArgAsInt32( 0 );
+          //  joystick2 = m.getArgAsInt32( 1 );
+        }
+        if ( m.getAddress() == "/user" )
+		{
+			// both the arguments are int32's
+			user = m.getArgAsString( 0 );
+            loaduser = true;
+        }
+        if ( m.getAddress() == "/ball" ){
+            ofxBox2dCircle  c;
+            c.setPhysics(0.1, 1.0, 1.0);
+            c.setup(box2d.getWorld(), mouseX, mouseY, 30);
+            float sgn = ofRandom(-1, 1);
+            float vx = copysign(20,sgn);
+            sgn = ofRandom(-1, 1);
+            float vy = copysign(20,sgn);
+            c.setVelocity(vx, vy);
+            c.setData(new Data());
+            b2Vec2 gravity = box2d.world->GetGravity();
+            b2Vec2 p = c.body->GetLocalCenter();
+            c.body->ApplyForce(b2Vec2( 0, -200 ), p);
+            Data * sd = (Data*)c.getData();
+            sd->soundID = ofRandom(0, N_SOUNDS);
+            sd->hit	= false;		
+            sd->type = 0;
+            circles.push_back(c);	
+	}
+   
+        if(loaduser && whichuser == 0){
+            user1.loadImage(user);
+            whichuser = 1;
+            user1load = true;
+            loaduser = false;
+        }
+        
+        if(loaduser && whichuser == 1){
+            user2.loadImage(user);
+            whichuser = 0;
+            user2load = true;
+            loaduser = false;
+        }
+    
+
     for(int i=0; i<wvideos.size(); i++){ 
     wvideos[i].idleMovie();
     }
     
+    mapped_joystick1 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
+//    joystick2 = int(ofMap(joystick2, 0, 360, 0, ofGetHeight()));
+        
+        if ((pmapped_joystick1 - mapped_joystick1) > 0) {
+            paddleattraction = ofGetHeight();
+        }
+        if ((pmapped_joystick1 - mapped_joystick1) < 0) {
+            paddleattraction = 0;
+        }
+      
+    
     for(int i=0; i<paddles.size(); i++) {
-        paddles[i].setPosition(paddles[i].getPosition().x, mouseY);
-        paddles[i].update();
+        
+        //maybe add distance function vs repulsion force to clamp velocity
+       /* float dis_from_bottom =ofDistance(0, ofGetHeight(), paddles[0].getPosition().x, paddles[0].getPosition().y);
+         float dis_from_top =ofDistance(0, 0, paddles[0].getPosition().x, paddles[0].getPosition().y);
+        if(dis < 10) 
+            paddles[i].addRepulsionForce(mouse, 9);
+		else 
+            paddles[i].addAttractionPoint(mouse, 4.0);*/
+        paddles[i].SetLocation(paddles[i].getPosition().x, mapped_joystick1);
+         paddles[i].update();
 	}
     for(int i=0; i<circles.size(); i++) {
         b2Vec2 p = circles[i].body->GetLocalCenter();
@@ -188,6 +265,7 @@ void testApp::update() {
             }
              
           theData->hit = false;  
+            winningvideos[i].movie->stop();
           box2d.getWorld()->DestroyBody(winningvideos[i].body);
             winningvideos.erase(winningvideos.begin()+i);   //HOW TO DELETE FROM VECTOR LIST?
         }
@@ -227,8 +305,12 @@ void testApp::update() {
             winningvideos.push_back(v);
         }
     }   
-}
 
+    pmapped_joystick1 = mapped_joystick1;
+    pmapped_joystick2 = mapped_joystick2;
+    
+}
+}
 
 //--------------------------------------------------------------
 void testApp::draw() {
@@ -269,8 +351,17 @@ void testApp::draw() {
         counter++;
     }
 
-   	
-
+   	ofSetColor(255, 255, 255);
+    
+    if(user1load){
+    user1.draw(50, 20, 40,40);
+    verdana22.drawString(ofToString(score1, 1), 100,20);
+    }
+    
+    if(user2load){
+    verdana22.drawString(ofToString(score2, 1), ofGetWidth() - 50,20);
+    user2.draw(ofGetWidth()-120, 20, 40,40);
+    }
 	string info = "";
 	info += "FPS: "+ofToString(ofGetFrameRate(), 1)+"\n";
     info += "Player 1 score: "+ofToString(score1, 1)+"\n";
@@ -282,29 +373,6 @@ void testApp::draw() {
 //--------------------------------------------------------------
 void testApp::keyPressed(int key) {
 	if(key == 't') ofToggleFullscreen();
-	if(key == 'b' || 'B') {
-        ofxBox2dCircle  c;
-		c.setPhysics(0.1, 1.0, 1.0);
-		c.setup(box2d.getWorld(), mouseX, mouseY, 30);
-       
-       // c.body->SetGravityScale(0);
-        float sgn = ofRandom(-1, 1);
-        float vx = copysign(20,sgn);
-        sgn = ofRandom(-1, 1);
-        float vy = copysign(20,sgn);
-        c.setVelocity(vx, vy);
-		c.setData(new Data());
-        b2Vec2 gravity = box2d.world->GetGravity();
-        b2Vec2 p = c.body->GetLocalCenter();
-        c.body->ApplyForce(b2Vec2( 0, -200 ), p);
-		Data * sd = (Data*)c.getData();
-		sd->soundID = ofRandom(0, N_SOUNDS);
-		sd->hit	= false;		
-        sd->type = 0;
-		circles.push_back(c);	
-        
-    }
-
 }
 
 //--------------------------------------------------------------
@@ -322,7 +390,7 @@ void testApp::mouseDragged(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void testApp::mousePressed(int x, int y, int button) {
-	
+  	
 }
 
 //--------------------------------------------------------------

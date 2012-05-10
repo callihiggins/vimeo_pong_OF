@@ -1,9 +1,24 @@
 #pragma once
 #include "ofMain.h"
 #include "ofxBox2d.h"
+#include "ofxOsc.h"
 
 
+#define OF_ADDON_USING_OFXOSC
 #define N_SOUNDS 5
+// listen on port 12345
+//port is 9002 at nyu
+#define PORT 9003 
+#define NUM_MSG_STRINGS 20
+#include <stdio.h>
+#include <stdlib.h>
+
+//128.122.151.183 - nyu
+#define HOST "localhost"
+//"192.168.130.241"
+//"localhost"
+//define PORT 12345
+
 
 class Data {
 public:
@@ -51,9 +66,10 @@ public:
             ofPushMatrix();
             ofTranslate(getPosition());
             ofRotateZ(getRotation());
-           // ofSetColor(theData->color);
+            ofSetColor(theData->color);
             ofSetRectMode(OF_RECTMODE_CENTER);
             ofFill();  
+            ofRect(0,0,width,width);
             ofDrawBitmapString(ofToString(theData->id), -5, 5);
             ofPopMatrix();
         }
@@ -148,8 +164,17 @@ public:
     vector		<ofVideoPlayer>	wvideos;
     ofTrueTypeFont	verdana22;
     ofImage vimeologo;
-    int score1, score2, counter;
+    int score1, score2, counter, joystick1, joystick2, mapped_joystick1, mapped_joystick2, pmapped_joystick1, pmapped_joystick2, lerp_joystick1, lerp_joystick2 ;
+    ofImage user1;
+    ofImage user2;
+    ofxOscSender sender1;
+	ofxOscSender sender2;
+    ofxOscReceiver	receiver;
+    string user;
+    bool loaduser, user1load, user2load;
+    int whichuser;
+    int paddleattraction;
 
-
+    
 };
 
