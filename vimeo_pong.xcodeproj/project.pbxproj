@@ -104,6 +104,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2B3BD081156588BF00CE4D28 /* ofxMatrix3x3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMatrix3x3.h; sourceTree = "<group>"; };
+		2B3BD082156588BF00CE4D28 /* ofxMatrix4x4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxMatrix4x4.h; sourceTree = "<group>"; };
+		2B3BD083156588BF00CE4D28 /* ofxPoint2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxPoint2f.h; sourceTree = "<group>"; };
+		2B3BD084156588BF00CE4D28 /* ofxPoint3f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxPoint3f.h; sourceTree = "<group>"; };
+		2B3BD085156588BF00CE4D28 /* ofxPoint4f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxPoint4f.h; sourceTree = "<group>"; };
+		2B3BD086156588BF00CE4D28 /* ofxQuaternion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxQuaternion.h; sourceTree = "<group>"; };
+		2B3BD087156588BF00CE4D28 /* ofxVec2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxVec2f.h; sourceTree = "<group>"; };
+		2B3BD088156588BF00CE4D28 /* ofxVec3f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxVec3f.h; sourceTree = "<group>"; };
+		2B3BD089156588BF00CE4D28 /* ofxVec4f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxVec4f.h; sourceTree = "<group>"; };
+		2B3BD08A156588BF00CE4D28 /* ofxVectorMath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxVectorMath.h; sourceTree = "<group>"; };
 		2B41BE591547854700CBBACA /* install.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = install.xml; sourceTree = "<group>"; };
 		2B41BE5C1547854700CBBACA /* Box2D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Box2D.h; sourceTree = "<group>"; };
 		2B41BE5E1547854700CBBACA /* b2BroadPhase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = b2BroadPhase.cpp; sourceTree = "<group>"; };
@@ -272,6 +282,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2B3BD07F156588BF00CE4D28 /* ofxVectorMath */ = {
+			isa = PBXGroup;
+			children = (
+				2B3BD080156588BF00CE4D28 /* src */,
+			);
+			name = ofxVectorMath;
+			path = of_preRelease_v007_osx/addons/ofxVectorMath;
+			sourceTree = SYSTEM_DEVELOPER_DIR;
+		};
+		2B3BD080156588BF00CE4D28 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				2B3BD081156588BF00CE4D28 /* ofxMatrix3x3.h */,
+				2B3BD082156588BF00CE4D28 /* ofxMatrix4x4.h */,
+				2B3BD083156588BF00CE4D28 /* ofxPoint2f.h */,
+				2B3BD084156588BF00CE4D28 /* ofxPoint3f.h */,
+				2B3BD085156588BF00CE4D28 /* ofxPoint4f.h */,
+				2B3BD086156588BF00CE4D28 /* ofxQuaternion.h */,
+				2B3BD087156588BF00CE4D28 /* ofxVec2f.h */,
+				2B3BD088156588BF00CE4D28 /* ofxVec3f.h */,
+				2B3BD089156588BF00CE4D28 /* ofxVec4f.h */,
+				2B3BD08A156588BF00CE4D28 /* ofxVectorMath.h */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
 		2B41BE581547854700CBBACA /* ofxBox2d */ = {
 			isa = PBXGroup;
 			children = (
@@ -553,6 +589,7 @@
 		BB4B014C10F69532006C3DED /* addons */ = {
 			isa = PBXGroup;
 			children = (
+				2B3BD07F156588BF00CE4D28 /* ofxVectorMath */,
 				2B469C01155C4A76000F8573 /* ofxOsc */,
 				2B41BE581547854700CBBACA /* ofxBox2d */,
 			);

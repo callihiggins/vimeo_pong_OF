@@ -2,6 +2,7 @@
 #include "ofMain.h"
 #include "ofxBox2d.h"
 #include "ofxOsc.h"
+#include "ofxVectorMath.h"
 
 
 #define OF_ADDON_USING_OFXOSC
@@ -161,7 +162,7 @@ public:
 	vector		<ofxBox2dRect>	paddles;
 	vector		<WinningVideo>	winningvideos;
     vector		<NominatedVideo>	nomvideos;
-    vector		<ofVideoPlayer>	wvideos;
+    vector		<ofVideoPlayer*>	wvideos;
     ofTrueTypeFont	verdana22;
     ofImage vimeologo;
     int score1, score2, counter, joystick1, joystick2, mapped_joystick1, mapped_joystick2, pmapped_joystick1, pmapped_joystick2, lerp_joystick1, lerp_joystick2 ;
@@ -174,7 +175,7 @@ public:
     bool loaduser, user1load, user2load;
     int whichuser;
     int paddleattraction;
-
+    b2Vec2 pveloc;
     
 };
 

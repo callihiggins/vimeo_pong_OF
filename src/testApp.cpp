@@ -31,7 +31,7 @@ void testApp::setup() {
 
     ofxBox2dRect paddle1;
     paddle1.setPhysics(0.1, 1.0, 0.0);
-    paddle1.setup(box2d.getWorld(), 0, 0, 10,ofGetHeight()/4, b2_kinematicBody);
+    paddle1.setup(box2d.getWorld(), 0, 0, 10, ofGetHeight()/4, b2_kinematicBody);
     paddle1.setData(new Data());
   //  paddle1.body->SetUserData(paddle1);
     Data * sd1 = (Data*)paddle1.getData();
@@ -42,7 +42,7 @@ void testApp::setup() {
 
     ofxBox2dRect paddle2;
     paddle2.setPhysics(0.1, 1.0, 0.0);
-    paddle2.setup(box2d.getWorld(), ofGetWidth(), ofGetHeight(), 10,ofGetHeight()/4, b2_kinematicBody);
+    paddle2.setup(box2d.getWorld(), ofGetWidth(), 0, 10, ofGetHeight()/4, b2_kinematicBody);
  //   paddle2.body->SetUserData(paddle2);
     paddle2.setData(new Data());
     Data * sd2 = (Data*)paddle2.getData();
@@ -58,22 +58,23 @@ void testApp::setup() {
 		sound[i].setLoop(false);
 	}
     vimeologo.loadImage("images/vimeo_logo.png");
+   
     for(int i=0; i< 13; i++){
-        ofVideoPlayer v;
-        v.loadMovie("movies/fingers" + ofToString(i) +".mov");
-        v.play();
+        ofVideoPlayer * v = new ofVideoPlayer();
+        v->loadMovie("movies/fingers" + ofToString(i) +".mov");
+        v->play();
         wvideos.push_back(v);
     }
 
 
     
-    for(int i=0; i < 13; i++){
+    for(int i=0; i < 5; i++){
        WinningVideo v;
         v.setPhysics(1.0, 0.5, 0.3);
        // v.body->SetUserData(v);
         v.setup(box2d.getWorld(), float(i*90 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
         v.setupTheCustomData();
-        v.movie = &wvideos[i];
+        v.movie = wvideos[i];
         winningvideos.push_back(v);
         
     }
@@ -94,7 +95,12 @@ void testApp::contactStart(ofxBox2dContactArgs &e) {
       
             if(aData){
                 if((aData->type == 0 && bData->type == 1)|| (bData->type == 0 && aData->type == 1)) {
-                sound[aData->soundID].play();                
+                sound[aData->soundID].play(); 
+                    b2Vec2 veloc = e.b->GetBody()->GetLinearVelocity();
+                    veloc.operator*=(1.5);
+                    veloc.operator-();
+                    
+                    e.b->GetBody()->SetLinearVelocity(veloc);
                 }
                 
                 if(aData->type == 0 && bData->type == 2){
@@ -156,7 +162,7 @@ void testApp::update() {
 	
 	box2d.update();
     
-    while( receiver.hasWaitingMessages() )
+ /*   while( receiver.hasWaitingMessages() )
 	{
 		// get the next message
 		ofxOscMessage m;
@@ -192,7 +198,7 @@ void testApp::update() {
             sd->hit	= false;		
             sd->type = 0;
             circles.push_back(c);	
-	}
+	}*/
    
         if(loaduser && whichuser == 0){
             user1.loadImage(user);
@@ -210,7 +216,7 @@ void testApp::update() {
     
 
     for(int i=0; i<wvideos.size(); i++){ 
-    wvideos[i].idleMovie();
+    wvideos[i]->idleMovie();
     }
     
     mapped_joystick1 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
@@ -222,23 +228,53 @@ void testApp::update() {
         if ((pmapped_joystick1 - mapped_joystick1) < 0) {
             paddleattraction = 0;
         }
-      
-    
-    for(int i=0; i<paddles.size(); i++) {
         
-        //maybe add distance function vs repulsion force to clamp velocity
-       /* float dis_from_bottom =ofDistance(0, ofGetHeight(), paddles[0].getPosition().x, paddles[0].getPosition().y);
-         float dis_from_top =ofDistance(0, 0, paddles[0].getPosition().x, paddles[0].getPosition().y);
-        if(dis < 10) 
-            paddles[i].addRepulsionForce(mouse, 9);
-		else 
-            paddles[i].addAttractionPoint(mouse, 4.0);*/
-        paddles[i].SetLocation(paddles[i].getPosition().x, mapped_joystick1);
-         paddles[i].update();
-	}
+        for(int i=0; i<paddles.size(); i++) {
+            b2Vec2 pos =  paddles[i].body->GetPosition();
+            b2Vec2 target = b2Vec2(pos.x, mouseY/OFX_BOX2D_SCALE);
+            b2Vec2 diff = b2Vec2(target.x-pos.x,target.y-pos.y);
+            diff.operator*=(50);
+            printf("velocity: %d \n",  int(paddles[i].body->GetLinearVelocity().y));
+            paddles[i].body->SetLinearVelocity(diff);
+        }
+      
+    //FOR WHEN THE BALL GETS TOO FAST
+    for(int i=0; i<circles.size(); i++) {
+         int maxSpeed = 50;
+         int minSpeed = 10;
+         b2Vec2 velocity = circles[i].body->GetLinearVelocity();
+         float32 speed = velocity.Length();
+     //   printf("speed: %d \n", int(speed));
+         if (speed > maxSpeed) {
+             circles[i].body->SetLinearDamping(0.5);
+         } else if (speed < maxSpeed) {
+             circles[i].body->SetLinearDamping(0.0);
+         }
+        if (speed < 10){
+            b2Vec2 veloc = circles[i].body->GetLinearVelocity();
+            veloc.operator*=(1.5);
+           circles[i].body->SetLinearVelocity(veloc);
+        }
+     }
+    
+    
+//    for(int i=0; i<paddles.size(); i++) {
+//        
+//        //maybe add distance function vs repulsion force to clamp velocity
+//       /* float dis_from_bottom =ofDistance(0, ofGetHeight(), paddles[0].getPosition().x, paddles[0].getPosition().y);
+//         float dis_from_top =ofDistance(0, 0, paddles[0].getPosition().x, paddles[0].getPosition().y);
+//        if(dis < 10) 
+//            paddles[i].addRepulsionForce(mouse, 9);
+//		else 
+//            paddles[i].addAttractionPoint(mouse, 4.0);*/
+//        paddles[i].setPosition(paddles[i].getPosition().x, mouseY);
+//         paddles[i].update();
+//	}
     for(int i=0; i<circles.size(); i++) {
         b2Vec2 p = circles[i].body->GetLocalCenter();
+      //KEEP THE BALL GOING UP
         circles[i].body->ApplyForce(b2Vec2( 0, -3 ), p);
+       //IF THE CIRCLE GOES OFFSCREEN, UP THE PLAYER SCORE 
         if(circles[i].getPosition().x > ofGetWidth()){
             score2 ++;
             box2d.getWorld()->DestroyBody(circles[i].body);
@@ -266,8 +302,11 @@ void testApp::update() {
              
           theData->hit = false;  
             winningvideos[i].movie->stop();
+            delete winningvideos[i].movie;
           box2d.getWorld()->DestroyBody(winningvideos[i].body);
+             wvideos.erase(wvideos.begin()+i);
             winningvideos.erase(winningvideos.begin()+i);   //HOW TO DELETE FROM VECTOR LIST?
+            
         }
   	}
 
@@ -283,11 +322,13 @@ void testApp::update() {
                 box2d.world->DestroyBody(iter1->body);  
                 iter1 = nomvideos.erase(iter1);  
         }  
-        vector <WinningVideo>::iterator iter2 = winningvideos.begin();  
-        while (iter2 != winningvideos.end()) {  
-            iter2->draw();  
-            box2d.world->DestroyBody(iter2->body);  
-            iter2 = winningvideos.erase(iter2);  
+        for(int i=0; i<winningvideos.size(); i++) {
+            box2d.world->DestroyBody(winningvideos[i].body);
+            delete winningvideos[i].movie;
+            winningvideos.erase(winningvideos.begin()+i);
+        }  
+        for(int i=0; i<wvideos.size(); i++) {
+            wvideos.erase(wvideos.begin()+i);
         }  
         vector <ofxBox2dCircle>::iterator iter3 = circles.begin();  
         while (iter3 != circles.end()) {  
@@ -296,13 +337,24 @@ void testApp::update() {
             iter3 = circles.erase(iter3);  
         }  
         
-        for(int i=0; i < 13; i++){
+        for(int i=0; i< 13; i++){
+            ofVideoPlayer * v = new ofVideoPlayer();
+            v->loadMovie("movies/fingers" + ofToString(i) +".mov");
+            v->play();
+            wvideos.push_back(v);
+        }
+        
+        
+        
+        for(int i=0; i < 5; i++){
             WinningVideo v;
             v.setPhysics(1.0, 0.5, 0.3);
             // v.body->SetUserData(v);
             v.setup(box2d.getWorld(), float(i*90 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
             v.setupTheCustomData();
+            v.movie = wvideos[i];
             winningvideos.push_back(v);
+            
         }
     }   
 
@@ -310,7 +362,7 @@ void testApp::update() {
     pmapped_joystick2 = mapped_joystick2;
     
 }
-}
+//}
 
 //--------------------------------------------------------------
 void testApp::draw() {
@@ -373,6 +425,24 @@ void testApp::draw() {
 //--------------------------------------------------------------
 void testApp::keyPressed(int key) {
 	if(key == 't') ofToggleFullscreen();
+    
+    ofxBox2dCircle  c;
+    c.setPhysics(0.1, 1.0, 1.0);
+    c.setup(box2d.getWorld(), mouseX, mouseY, 30);
+    float sgn = ofRandom(-1, 1);
+    float vx = copysign(20,sgn);
+    sgn = ofRandom(-1, 1);
+    float vy = copysign(20,sgn);
+    c.setVelocity(vx, vy);
+    c.setData(new Data());
+    b2Vec2 gravity = box2d.world->GetGravity();
+    b2Vec2 p = c.body->GetLocalCenter();
+    c.body->ApplyForce(b2Vec2( 0, -200 ), p);
+    Data * sd = (Data*)c.getData();
+    sd->soundID = ofRandom(0, N_SOUNDS);
+    sd->hit	= false;		
+    sd->type = 0;
+    circles.push_back(c);	
 }
 
 //--------------------------------------------------------------
