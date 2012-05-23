@@ -6,7 +6,7 @@ void testApp::setup() {
 	ofBackgroundHex(0xfdefc2);
     ofTrueTypeFont::setGlobalDpi(72);
     ofSetFrameRate(60);
-	receiver.setup( PORT );
+	receiver.setup( port );
     loaduser = false;
     user1load = false;
     user2load = false;
@@ -136,7 +136,7 @@ void testApp::update() {
 	box2d.update();
     
     //OSC STUFF
-   /* while( receiver.hasWaitingMessages() )
+    while( receiver.hasWaitingMessages() )
 	{
 		// get the next message
 		ofxOscMessage m;
@@ -146,7 +146,7 @@ void testApp::update() {
 		{
 			// both the arguments are int32's
 			joystick1 = m.getArgAsInt32( 0 );
-          //  joystick2 = m.getArgAsInt32( 1 );
+            joystick2 = m.getArgAsInt32( 1 );
         }
         if ( m.getAddress() == "/user" )
 		{
@@ -172,7 +172,8 @@ void testApp::update() {
             sd->hit	= false;		
             sd->type = 0;
             circles.push_back(c);	
-	}*/
+        }
+    }
    
         if(loaduser && whichuser == 0){
             user1.loadImage(user);
@@ -199,13 +200,20 @@ void testApp::update() {
     
    //MOVE THE PADDLES
         mapped_joystick1 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
-        for(int i=0; i<paddles.size(); i++) {
-            b2Vec2 pos =  paddles[i].body->GetPosition();
-            b2Vec2 target = b2Vec2(pos.x, mouseY/OFX_BOX2D_SCALE);
-            b2Vec2 diff = b2Vec2(target.x-pos.x,target.y-pos.y);
-            diff.operator*=(2);
-            paddles[i].body->SetLinearVelocity(diff);
-        }
+        mapped_joystick2 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
+      
+            b2Vec2 pos1 =  paddles[0].body->GetPosition();
+            b2Vec2 target1 = b2Vec2(pos1.x, mapped_joystick1/OFX_BOX2D_SCALE);
+            b2Vec2 diff1 = b2Vec2(target1.x-pos1.x,target1.y-pos1.y);
+            diff1.operator*=(2);
+            paddles[0].body->SetLinearVelocity(diff1);
+            
+            b2Vec2 pos2 =  paddles[1].body->GetPosition();
+            b2Vec2 target2 = b2Vec2(pos2.x, mapped_joystick1/OFX_BOX2D_SCALE);
+            b2Vec2 diff2 = b2Vec2(target2.x-pos2.x,target2.y-pos2.y);
+            diff2.operator*=(2);
+            paddles[1].body->SetLinearVelocity(diff2);
+        
       
     //FOR WHEN THE BALL GETS TOO FAST OR SLOW
     for(int i=0; i<circles.size(); i++) {
@@ -325,8 +333,7 @@ void testApp::update() {
         }
      }   
 
-   }
-//}
+}
 
 //--------------------------------------------------------------
 void testApp::draw() {
@@ -390,7 +397,7 @@ void testApp::draw() {
 void testApp::keyPressed(int key) {
 	if(key == 't') ofToggleFullscreen();
     
-    ofxBox2dCircle  c;
+  /*  ofxBox2dCircle  c;
     c.setPhysics(0.1, 1.0, 1.0);
     c.setup(box2d.getWorld(), mouseX, mouseY, 30);
     float sgn = ofRandom(-1, 1);
@@ -401,7 +408,7 @@ void testApp::keyPressed(int key) {
     sd->soundID = ofRandom(0, N_SOUNDS);
     sd->hit	= false;		
     sd->type = 0;
-    circles.push_back(c);	
+    circles.push_back(c);	*/
 }
 
 //--------------------------------------------------------------
@@ -428,5 +435,38 @@ void testApp::mouseReleased(int x, int y, int button) {
 
 //--------------------------------------------------------------
 void testApp::resized(int w, int h){
+}
+
+void testApp::loadSettings(string fileString){
+	string host_address;
+	string host_address1;
+	string host_address2;
+	string filename;
+	
+	//--------------------------------------------- get configs
+    ofxXmlSettings xmlReader;
+	bool result = xmlReader.loadFile(fileString);
+	if(!result) printf("error loading xml file\n");
+	
+	
+	host_address = xmlReader.getValue("settings:master:address","test",0);
+	port = xmlReader.getValue("settings:master:port",5204,0);
+	host = (char *) malloc(sizeof(char)*host_address.length());
+	strcpy(host, host_address.c_str());
+    
+    
+	filename = xmlReader.getValue("settings:movie:","test",0);
+	
+	
+    int w = xmlReader.getValue("settings:dimensions:width", 640, 0);
+	int h = xmlReader.getValue("settings:dimensions:height", 480, 0);
+	
+    ofSetWindowShape(w, h);
+    
+	
+	if(xmlReader.getValue("settings:go_fullscreen", "false", 0).compare("true") == 0) {
+		fullscreen = true;
+		ofSetFullscreen(true);
+	}
 }
 

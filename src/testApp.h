@@ -3,19 +3,20 @@
 #include "ofxBox2d.h"
 #include "ofxOsc.h"
 #include "ofxVectorMath.h"
+#include "ofxXmlSettings.h"
 
 
 #define OF_ADDON_USING_OFXOSC
 #define N_SOUNDS 5
 // listen on port 12345
 //port is 9002 at nyu
-#define PORT 9003 
+#define PORT 9001 
 #define NUM_MSG_STRINGS 20
 #include <stdio.h>
 #include <stdlib.h>
 
 //128.122.151.183 - nyu
-#define HOST "localhost"
+//#define HOST "localhost"
 //"192.168.130.241"
 //"localhost"
 //define PORT 12345
@@ -149,7 +150,7 @@ public:
 	void mousePressed(int x, int y, int button);
 	void mouseReleased(int x, int y, int button);
 	void resized(int w, int h);
-	
+	void loadSettings(string fileString);
 	// this is the function for contacts
 	void contactStart(ofxBox2dContactArgs &e);
 	void contactEnd(ofxBox2dContactArgs &e);
@@ -169,11 +170,13 @@ public:
     ofImage user1, user2;
     ofxOscSender sender1, sender2;
     ofxOscReceiver	receiver;
+    int port;
+    char * host;
     string user;
     bool loaduser, user1load, user2load;
     int whichuser;
     int paddleattraction;
     b2Vec2 pveloc;
-    
+    bool fullscreen;
 };
 
