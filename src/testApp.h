@@ -150,7 +150,9 @@ public:
 	void mousePressed(int x, int y, int button);
 	void mouseReleased(int x, int y, int button);
 	void resized(int w, int h);
-	void loadSettings(string fileString);
+    void startGame();
+    void newBall();
+  	void loadSettings(string fileString);
 	// this is the function for contacts
 	void contactStart(ofxBox2dContactArgs &e);
 	void contactEnd(ofxBox2dContactArgs &e);
@@ -166,17 +168,16 @@ public:
     vector		<ofVideoPlayer*>	nvideos;
     ofTrueTypeFont	verdana22;
     ofImage vimeologo;
-    int score1, score2, counter, joystick1, joystick2, mapped_joystick1, mapped_joystick2 ;
+    int score1, score2, counter, joystick1, joystick2, mapped_joystick1, mapped_joystick2, alpha,  alphaincrement, whichuser, countdownnum, newballcount ;
     ofImage user1, user2;
     ofxOscSender sender1, sender2;
     ofxOscReceiver	receiver;
     int port;
     char * host;
     string user;
-    bool loaduser, user1load, user2load;
-    int whichuser;
+    bool loaduser, user1load, user2load, drawusers;
     int paddleattraction;
     b2Vec2 pveloc;
-    bool fullscreen;
+    bool fullscreen, startGameBool, startScreen, players,  countdown, countdownnumbool, newballbool;
 };
 

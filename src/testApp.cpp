@@ -6,21 +6,30 @@ void testApp::setup() {
 	ofBackgroundHex(0xfdefc2);
     ofTrueTypeFont::setGlobalDpi(72);
     ofSetFrameRate(60);
+    loadSettings("settings.xml");
 	receiver.setup( port );
+    whichuser = 0;
     loaduser = false;
+    drawusers = false;
     user1load = false;
     user2load = false;
-    
+    countdownnum = 400;
+    countdownnumbool = false;
+    newballcount = 0;
+    players = true;
+    alpha = 125;
+    alphaincrement = 1;
     verdana22.loadFont("verdana.ttf", 22, true, true);
 	verdana22.setLineHeight(18.0f);
 	verdana22.setLetterSpacing(1.037);
-
+    ofEnableAlphaBlending();
 	box2d.init();
 	box2d.setGravity(0, 10);
 	box2d.createGround();
 	box2d.setFPS(30.0);
     box2d.createBounds(0, 0,ofGetScreenWidth(), 0);
-
+    startScreen = true;
+    startGameBool = false;
     score1 = 0;
     score2 = 0;
     counter = 0;
@@ -28,36 +37,7 @@ void testApp::setup() {
 	ofAddListener(box2d.contactStartEvents, this, &testApp::contactStart);
 	ofAddListener(box2d.contactEndEvents, this, &testApp::contactEnd);
 
-    ofxBox2dRect paddle1;
-    paddle1.setPhysics(0.1, 1.0, 0.0);
-    paddle1.setup(box2d.getWorld(), 0, 0, 10, ofGetHeight()/4, b2_kinematicBody);
-    paddle1.setData(new Data());
-  //  paddle1.body->SetUserData(paddle1);
-    Data * sd1 = (Data*)paddle1.getData();
-    sd1->soundID = ofRandom(0, N_SOUNDS);
-    sd1->hit	= false;		
-    sd1->type = 1;
-    paddles.push_back(paddle1);	
-
-    ofxBox2dRect paddle2;
-    paddle2.setPhysics(0.1, 1.0, 0.0);
-    paddle2.setup(box2d.getWorld(), ofGetWidth(), 0, 10, ofGetHeight()/4, b2_kinematicBody);
- //   paddle2.body->SetUserData(paddle2);
-    paddle2.setData(new Data());
-    Data * sd2 = (Data*)paddle2.getData();
-    sd2->soundID = ofRandom(0, N_SOUNDS);
-    sd2->hit	= false;	
-	sd2->type = 1;
-    paddles.push_back(paddle2);	
-
-    // load the 8 sfx soundfile
-	for (int i=0; i<N_SOUNDS; i++) {
-		sound[i].loadSound("sfx/"+ofToString(i)+".mp3");
-		sound[i].setMultiPlay(true);
-		sound[i].setLoop(false);
-	}
-    
-    vimeologo.loadImage("images/vimeo_logo.png");
+        vimeologo.loadImage("images/vimeo_logo.png");
    
     for(int i=0; i< 13; i++){
         ofVideoPlayer * v = new ofVideoPlayer();
@@ -132,7 +112,6 @@ void testApp::contactEnd(ofxBox2dContactArgs &e) {
 
 //--------------------------------------------------------------
 void testApp::update() {
-	
 	box2d.update();
     
     //OSC STUFF
@@ -146,12 +125,12 @@ void testApp::update() {
 		{
 			// both the arguments are int32's
 			joystick1 = m.getArgAsInt32( 0 );
-            joystick2 = m.getArgAsInt32( 1 );
+          //  joystick2 = m.getArgAsInt32( 1 );
         }
-        if ( m.getAddress() == "/user" )
+        if ( m.getAddress() == "/user" && players)
 		{
-			// both the arguments are int32's
-			user = m.getArgAsString( 0 );
+            user = m.getArgAsString( 0 );
+            printf("got a user!");
             loaduser = true;
         }
         if ( m.getAddress() == "/ball" ){
@@ -174,22 +153,35 @@ void testApp::update() {
             circles.push_back(c);	
         }
     }
-   
-        if(loaduser && whichuser == 0){
-            user1.loadImage(user);
-            whichuser = 1;
-            user1load = true;
-            loaduser = false;
-        }
-        
-        if(loaduser && whichuser == 1){
-            user2.loadImage(user);
-            whichuser = 0;
-            user2load = true;
-            loaduser = false;
+    if(loaduser && players && whichuser == 0){
+        user1.loadImage(user);
+        whichuser = 1;
+        user1load = true;
+        loaduser = false;
+    }
+    
+    if(loaduser && players && whichuser == 1){
+        user2.loadImage(user);
+        whichuser = 0;
+        user2load = true;
+        loaduser = false;
+    }
+
+        alpha  = alpha + alphaincrement;
+        if(alpha > 200 || alpha < 100){
+        alphaincrement = alphaincrement * -1;
         }
     
+    if(countdownnumbool){
+        printf("counting down: %d \n", countdownnum);
+        countdownnum = countdownnum -1;
+    }
+    
 
+       
+    
+    if(startGameBool){
+   
     for(int i=0; i<wvideos.size(); i++){ 
     wvideos[i]->idleMovie();
     }
@@ -203,13 +195,13 @@ void testApp::update() {
         mapped_joystick2 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
       
             b2Vec2 pos1 =  paddles[0].body->GetPosition();
-            b2Vec2 target1 = b2Vec2(pos1.x, mapped_joystick1/OFX_BOX2D_SCALE);
+            b2Vec2 target1 = b2Vec2(pos1.x, mouseY/OFX_BOX2D_SCALE);
             b2Vec2 diff1 = b2Vec2(target1.x-pos1.x,target1.y-pos1.y);
             diff1.operator*=(2);
             paddles[0].body->SetLinearVelocity(diff1);
             
             b2Vec2 pos2 =  paddles[1].body->GetPosition();
-            b2Vec2 target2 = b2Vec2(pos2.x, mapped_joystick1/OFX_BOX2D_SCALE);
+            b2Vec2 target2 = b2Vec2(pos2.x, mouseY/OFX_BOX2D_SCALE);
             b2Vec2 diff2 = b2Vec2(target2.x-pos2.x,target2.y-pos2.y);
             diff2.operator*=(2);
             paddles[1].body->SetLinearVelocity(diff2);
@@ -241,13 +233,24 @@ void testApp::update() {
             score2 ++;
             box2d.getWorld()->DestroyBody(circles[i].body);
             circles.erase(circles.begin() + i);
+            newballbool = true;
         }
         if(circles[i].getPosition().x < 0){
             score1 ++;
              box2d.getWorld()->DestroyBody(circles[i].body);
             circles.erase(circles.begin() + i);
+            newballbool = true;
         }
 	}
+        if(newballbool){
+            newballcount++;
+            if (newballcount > 100){
+                newBall();
+                newballbool = false;
+                newballcount = 0;
+            }
+            
+        }
     for(int i=0; i<winningvideos.size(); i++) {
         Data * theData = (Data*)winningvideos[i].getData();
         if(theData->hit == true){
@@ -315,28 +318,67 @@ void testApp::update() {
             box2d.world->DestroyBody(iter3->body);  
             iter3 = circles.erase(iter3);  
         }  
-        
-        for(int i=0; i< 13; i++){
-            ofVideoPlayer * v = new ofVideoPlayer();
-            v->loadMovie("movies/fingers" + ofToString(i) +".mov");
-            v->play();
-            wvideos.push_back(v);
-        }
-        for(int i=0; i < 13; i++){
-            WinningVideo v;
-            v.setPhysics(1.0, 0.5, 0.3);
-            // v.body->SetUserData(v);
-            v.setup(box2d.getWorld(), float(i*90 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
-            v.setupTheCustomData();
-            v.movie = wvideos[i];
-            winningvideos.push_back(v);
-        }
-     }   
-
+        startGameBool = false;
+        startScreen = true;    
+        drawusers = false;
+    }   
+    }
 }
 
 //--------------------------------------------------------------
 void testApp::draw() {
+    ofBackgroundHex(0xfdefc2);    
+           
+    if(startScreen){
+         verdana22.drawString("Vimeo pong", ofGetWidth()/2, ofGetHeight()/2);
+         verdana22.drawString("Press button to start a new game", ofGetWidth()/2, ofGetHeight()/2 + 100);
+        printf("startscreen \n");
+    }
+   
+    if(!user1load && players && !startScreen){
+     //    printf("alpha: %d: \n", alpha);
+        ofSetColor(238,58,130, alpha);
+        ofSetRectMode(OF_RECTMODE_CORNER);
+        ofRect(0,0, ofGetWidth()/2, ofGetHeight());
+        ofSetColor(0);
+        verdana22.drawString("Left Player Tap!", ofGetWidth()/4, ofGetHeight()/2 + 100);
+    }
+        
+    if(user1load && !user2load && players){
+        ofSetColor(238,58,130, alpha);
+        ofSetRectMode(OF_RECTMODE_CORNER);
+        ofRect(ofGetWidth()/2, 0, ofGetWidth()/2, ofGetHeight());
+        ofSetColor(255);
+        user1.draw(ofGetWidth()/4, ofGetWidth()/20, 100, 100);
+          ofSetColor(0);
+        verdana22.drawString("Right Player Tap!", ofGetWidth()/4 + ofGetWidth()/2, ofGetHeight()/2 + 100);
+        }
+    
+        if(user1load &&  user2load){
+        countdownnumbool = true;
+            
+         ofSetColor(0);
+        if(countdownnum > 300)
+           
+        verdana22.drawString("3", ofGetWidth()/2 + ofGetWidth()/2, ofGetHeight()/2 + 100);
+        if(countdownnum > 200 &&countdownnum < 300 )
+            verdana22.drawString("2", ofGetWidth()/2 , ofGetHeight()/2 + 100);
+        if(countdownnum > 100 && countdownnum < 200)
+            verdana22.drawString("1", ofGetWidth()/2, ofGetHeight()/2 + 100);
+        if(countdownnum > 0 && countdownnum < 100)
+            verdana22.drawString("GO!", ofGetWidth()/2, ofGetHeight()/2 + 100);
+        if (countdownnum == 0){
+            countdownnumbool = false;
+            startGame();
+            drawusers = true;
+            players = false;
+            user1load = false;
+            user2load = false;
+            newBall();
+        }
+        
+    }
+    if(startGameBool){
 	
 	for(int i=0; i<circles.size(); i++) {
 	Data * data = (Data*)circles[i].getData();
@@ -372,19 +414,18 @@ void testApp::draw() {
         ofSetColor(245, 58, 135);
         verdana22.drawString("PLAYER TWO WINS", ofGetWidth()/2, ofGetHeight()/2);
         counter++;
+        }
     }
 
    	ofSetColor(255, 255, 255);
     
-    if(user1load){
+    if (drawusers){
     user1.draw(50, 20, 40,40);
     verdana22.drawString(ofToString(score1, 1), 100,20);
-    }
-    
-    if(user2load){
     verdana22.drawString(ofToString(score2, 1), ofGetWidth() - 50,20);
     user2.draw(ofGetWidth()-120, 20, 40,40);
     }
+
 	string info = "";
 	info += "FPS: "+ofToString(ofGetFrameRate(), 1)+"\n";
     info += "Player 1 score: "+ofToString(score1, 1)+"\n";
@@ -396,20 +437,17 @@ void testApp::draw() {
 //--------------------------------------------------------------
 void testApp::keyPressed(int key) {
 	if(key == 't') ofToggleFullscreen();
+         
+    if(key == 's' && startScreen == true){
+        startScreen = false;
+        players = true;
+        
+    }
+
+
     
-  /*  ofxBox2dCircle  c;
-    c.setPhysics(0.1, 1.0, 1.0);
-    c.setup(box2d.getWorld(), mouseX, mouseY, 30);
-    float sgn = ofRandom(-1, 1);
-    float vx = copysign(20,sgn);
-    c.setVelocity(vx, 0);
-    c.setData(new Data());
-    Data * sd = (Data*)c.getData();
-    sd->soundID = ofRandom(0, N_SOUNDS);
-    sd->hit	= false;		
-    sd->type = 0;
-    circles.push_back(c);	*/
-}
+    
+   }
 
 //--------------------------------------------------------------
 void testApp::keyReleased(int key) {
@@ -436,6 +474,57 @@ void testApp::mouseReleased(int x, int y, int button) {
 //--------------------------------------------------------------
 void testApp::resized(int w, int h){
 }
+
+void testApp::startGame(){
+    printf("starting new game");
+    startGameBool = true;
+    ofxBox2dRect paddle1;
+    paddle1.setPhysics(0.1, 1.0, 0.0);
+    paddle1.setup(box2d.getWorld(), 0, 0, 10, ofGetHeight()/4, b2_kinematicBody);
+    paddle1.setData(new Data());
+    //  paddle1.body->SetUserData(paddle1);
+    Data * sd1 = (Data*)paddle1.getData();
+    sd1->soundID = ofRandom(0, N_SOUNDS);
+    sd1->hit	= false;		
+    sd1->type = 1;
+    paddles.push_back(paddle1);	
+    
+    ofxBox2dRect paddle2;
+    paddle2.setPhysics(0.1, 1.0, 0.0);
+    paddle2.setup(box2d.getWorld(), ofGetWidth(), 0, 10, ofGetHeight()/4, b2_kinematicBody);
+    //   paddle2.body->SetUserData(paddle2);
+    paddle2.setData(new Data());
+    Data * sd2 = (Data*)paddle2.getData();
+    sd2->soundID = ofRandom(0, N_SOUNDS);
+    sd2->hit	= false;	
+	sd2->type = 1;
+    paddles.push_back(paddle2);	
+    
+    // load the 8 sfx soundfile
+	for (int i=0; i<N_SOUNDS; i++) {
+		sound[i].loadSound("sfx/"+ofToString(i)+".mp3");
+		sound[i].setMultiPlay(true);
+		sound[i].setLoop(false);
+	}
+}
+
+void testApp::newBall(){
+    ofxBox2dCircle  c;
+    c.setPhysics(0.1, 1.0, 1.0);
+    c.setup(box2d.getWorld(), mouseX, mouseY, 30);
+    float sgn = ofRandom(-1, 1);
+    float vx = copysign(20,sgn);
+    c.setVelocity(vx, 0);
+    c.setData(new Data());
+    Data * sd = (Data*)c.getData();
+    sd->soundID = ofRandom(0, N_SOUNDS);
+    sd->hit	= false;		
+    sd->type = 0;
+    circles.push_back(c);	
+}
+
+
+
 
 void testApp::loadSettings(string fileString){
 	string host_address;
