@@ -15,8 +15,8 @@ void testApp::setup() {
     user2load = false;
     countdownnum = 400;
     countdownnumbool = false;
-    newballcount = 0;
     players = true;
+    newballcount = 0;
     alpha = 125;
     alphaincrement = 1;
     verdana22.loadFont("verdana.ttf", 22, true, true);
@@ -56,6 +56,7 @@ void testApp::setup() {
         v.setupTheCustomData();
         v.movie = wvideos[i];
         winningvideos.push_back(v);
+         printf("right position \n", winningvideos[i].getPosition().x);
         
     }
     
@@ -130,6 +131,7 @@ void testApp::update() {
         if ( m.getAddress() == "/user" && players)
 		{
             user = m.getArgAsString( 0 );
+            username =  m.getArgAsString( 1 );
             printf("got a user!");
             loaduser = true;
         }
@@ -155,6 +157,7 @@ void testApp::update() {
     }
     if(loaduser && players && whichuser == 0){
         user1.loadImage(user);
+        username1 = username;
         whichuser = 1;
         user1load = true;
         loaduser = false;
@@ -162,6 +165,7 @@ void testApp::update() {
     
     if(loaduser && players && whichuser == 1){
         user2.loadImage(user);
+        username2 = username;
         whichuser = 0;
         user2load = true;
         loaduser = false;
@@ -233,12 +237,14 @@ void testApp::update() {
             score2 ++;
             box2d.getWorld()->DestroyBody(circles[i].body);
             circles.erase(circles.begin() + i);
+            if (score1 < 5 && score2 < 5)
             newballbool = true;
         }
         if(circles[i].getPosition().x < 0){
             score1 ++;
              box2d.getWorld()->DestroyBody(circles[i].body);
             circles.erase(circles.begin() + i);
+            if (score1 < 5 && score2 < 5)
             newballbool = true;
         }
 	}
@@ -321,7 +327,7 @@ void testApp::update() {
         startGameBool = false;
         startScreen = true;    
         drawusers = false;
-    }   
+        }   
     }
 }
 
@@ -356,11 +362,14 @@ void testApp::draw() {
     
         if(user1load &&  user2load){
         countdownnumbool = true;
-            
-         ofSetColor(0);
+        ofSetColor(255);
+        user1.draw(ofGetWidth()/4, ofGetWidth()/20, 100, 100);
+        user2.draw(ofGetWidth()/4 + ofGetWidth()/2, ofGetWidth()/20, 100, 100);
+        ofSetColor(0);
+        verdana22.drawString(username1, ofGetWidth()/4, ofGetWidth()/20 + user1.width + 20);
+        verdana22.drawString(username2, ofGetWidth()/4 + ofGetWidth()/2, ofGetWidth()/20 + user2.width + 20);
         if(countdownnum > 300)
-           
-        verdana22.drawString("3", ofGetWidth()/2 + ofGetWidth()/2, ofGetHeight()/2 + 100);
+        verdana22.drawString("3", ofGetWidth()/2, ofGetWidth()/2 +  100);
         if(countdownnum > 200 &&countdownnum < 300 )
             verdana22.drawString("2", ofGetWidth()/2 , ofGetHeight()/2 + 100);
         if(countdownnum > 100 && countdownnum < 200)
@@ -510,8 +519,8 @@ void testApp::startGame(){
 
 void testApp::newBall(){
     ofxBox2dCircle  c;
-    c.setPhysics(0.1, 1.0, 1.0);
-    c.setup(box2d.getWorld(), mouseX, mouseY, 30);
+    c.setPhysics(0.1, 1.0, 0.0);
+    c.setup(box2d.getWorld(), ofGetWidth()/2, ofGetHeight()/2, 30);
     float sgn = ofRandom(-1, 1);
     float vx = copysign(20,sgn);
     c.setVelocity(vx, 0);

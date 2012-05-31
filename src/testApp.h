@@ -174,7 +174,7 @@ public:
     ofxOscReceiver	receiver;
     int port;
     char * host;
-    string user;
+    string user, username, username1, username2;
     bool loaduser, user1load, user2load, drawusers;
     int paddleattraction;
     b2Vec2 pveloc;
