@@ -6,6 +6,7 @@ void testApp::setup() {
 	ofBackgroundHex(0xfdefc2);
     ofTrueTypeFont::setGlobalDpi(72);
     ofSetFrameRate(60);
+    ofHideCursor();
     loadSettings("settings.xml");
 	receiver.setup( port );
     whichuser = 0;
@@ -19,16 +20,17 @@ void testApp::setup() {
     newballcount = 0;
     alpha = 125;
     alphaincrement = 1;
-    verdana22.loadFont("verdana.ttf", 22, true, true);
-	verdana22.setLineHeight(18.0f);
-	verdana22.setLetterSpacing(1.037);
+    aerofrog82.loadFont("aerofrog.ttf", 82, true, true);
+	aerofrog82.setLineHeight(18.0f);
+	aerofrog82.setLetterSpacing(1.037);
     ofEnableAlphaBlending();
 	box2d.init();
 	box2d.setGravity(0, 10);
-	box2d.createGround();
+    bounds.set(765, 77, 1820, 920);
+    box2d.createBounds(bounds);
+	//box2d.createGround();
 	box2d.setFPS(30.0);
-    box2d.createBounds(0, 0,ofGetScreenWidth(), 0);
-    startScreen = true;
+        startScreen = true;
     startGameBool = false;
     score1 = 0;
     score2 = 0;
@@ -38,6 +40,7 @@ void testApp::setup() {
 	ofAddListener(box2d.contactEndEvents, this, &testApp::contactEnd);
 
         vimeologo.loadImage("images/vimeo_logo.png");
+    backgroundimg.loadImage("images/vimearcadeL.png");
    
     for(int i=0; i< 13; i++){
         ofVideoPlayer * v = new ofVideoPlayer();
@@ -52,7 +55,7 @@ void testApp::setup() {
        WinningVideo v;
         v.setPhysics(1.0, 0.5, 0.3);
        // v.body->SetUserData(v);
-        v.setup(box2d.getWorld(), float(i*90 + 80), float(ofRandom(20, ofGetHeight() - 40)), 40,40, b2_staticBody);
+        v.setup(box2d.getWorld(), float(bounds.x +i*bounds.width/13 + 80), float(ofRandom(bounds.y + 100, bounds.height - 130)), 40,40, b2_staticBody);
         v.setupTheCustomData();
         v.movie = wvideos[i];
         winningvideos.push_back(v);
@@ -126,33 +129,19 @@ void testApp::update() {
 		{
 			// both the arguments are int32's
 			joystick1 = m.getArgAsInt32( 0 );
-          //  joystick2 = m.getArgAsInt32( 1 );
+            joystick2 = m.getArgAsInt32( 1 );
         }
-        if ( m.getAddress() == "/user" && players)
+        if ( m.getAddress() == "/user" && players && !startScreen)
 		{
             user = m.getArgAsString( 0 );
             username =  m.getArgAsString( 1 );
             printf("got a user!");
             loaduser = true;
         }
-        if ( m.getAddress() == "/ball" ){
-            ofxBox2dCircle  c;
-            c.setPhysics(0.1, 1.0, 1.0);
-            c.setup(box2d.getWorld(), mouseX, mouseY, 30);
-            float sgn = ofRandom(-1, 1);
-            float vx = copysign(20,sgn);
-            sgn = ofRandom(-1, 1);
-            float vy = copysign(20,sgn);
-            c.setVelocity(vx, 0);
-            c.setData(new Data());
-            b2Vec2 gravity = box2d.world->GetGravity();
-            b2Vec2 p = c.body->GetLocalCenter();
-            c.body->ApplyForce(b2Vec2( 0, -200 ), p);
-            Data * sd = (Data*)c.getData();
-            sd->soundID = ofRandom(0, N_SOUNDS);
-            sd->hit	= false;		
-            sd->type = 0;
-            circles.push_back(c);	
+        if ( m.getAddress() == "/start") {
+            startScreen = false;
+            players = true;
+
         }
     }
     if(loaduser && players && whichuser == 0){
@@ -195,17 +184,20 @@ void testApp::update() {
     }
     
    //MOVE THE PADDLES
-        mapped_joystick1 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
-        mapped_joystick2 = int(ofMap(joystick1, 0, 360, 0, ofGetHeight()));
+        mapped_joystick1 = int(ofMap(joystick1, 0, 360, bounds.y + 65, bounds.y+ bounds.height - 130));
+        mapped_joystick2 = int(ofMap(joystick2, 0, 360, bounds.y + 65, bounds.y+ bounds.height - 130));
       
             b2Vec2 pos1 =  paddles[0].body->GetPosition();
-            b2Vec2 target1 = b2Vec2(pos1.x, mouseY/OFX_BOX2D_SCALE);
-            b2Vec2 diff1 = b2Vec2(target1.x-pos1.x,target1.y-pos1.y);
+            b2Vec2 target1 = b2Vec2(pos1.x, mapped_joystick1/OFX_BOX2D_SCALE);
+        //     b2Vec2 target1 = b2Vec2(pos1.x, mouseY/OFX_BOX2D_SCALE);
+
+        b2Vec2 diff1 = b2Vec2(target1.x-pos1.x,target1.y-pos1.y);
             diff1.operator*=(2);
             paddles[0].body->SetLinearVelocity(diff1);
             
             b2Vec2 pos2 =  paddles[1].body->GetPosition();
-            b2Vec2 target2 = b2Vec2(pos2.x, mouseY/OFX_BOX2D_SCALE);
+         //   b2Vec2 target2 = b2Vec2(pos2.x, mouseY/OFX_BOX2D_SCALE);
+            b2Vec2 target2 = b2Vec2(pos2.x, mapped_joystick2/OFX_BOX2D_SCALE);
             b2Vec2 diff2 = b2Vec2(target2.x-pos2.x,target2.y-pos2.y);
             diff2.operator*=(2);
             paddles[1].body->SetLinearVelocity(diff2);
@@ -233,14 +225,14 @@ void testApp::update() {
       //KEEP THE BALL GOING UP
         circles[i].body->ApplyForce(b2Vec2( 0, -3 ), p);
        //IF THE CIRCLE GOES OFFSCREEN, UP THE PLAYER SCORE 
-        if(circles[i].getPosition().x > ofGetWidth()){
+        if(circles[i].getPosition().x > bounds.x + bounds.width - 40){
             score2 ++;
             box2d.getWorld()->DestroyBody(circles[i].body);
             circles.erase(circles.begin() + i);
             if (score1 < 5 && score2 < 5)
             newballbool = true;
         }
-        if(circles[i].getPosition().x < 0){
+        if(circles[i].getPosition().x < bounds.x + 40){
             score1 ++;
              box2d.getWorld()->DestroyBody(circles[i].body);
             circles.erase(circles.begin() + i);
@@ -333,11 +325,18 @@ void testApp::update() {
 
 //--------------------------------------------------------------
 void testApp::draw() {
-    ofBackgroundHex(0xfdefc2);    
+    ofBackground(0); 
+    ofSetColor(255);
+    ofSetRectMode(OF_RECTMODE_CORNER);
+    backgroundimg.draw(0,0, ofGetWidth(), ofGetHeight());
+    ofSetColor(0, 173, 238, 125);
+    ofRect(bounds.x, bounds.y, bounds.width, 65);
+    ofRect(bounds.x, bounds.y + bounds.height-65, bounds.width, 65);
            
     if(startScreen){
-         verdana22.drawString("Vimeo pong", ofGetWidth()/2, ofGetHeight()/2);
-         verdana22.drawString("Press button to start a new game", ofGetWidth()/2, ofGetHeight()/2 + 100);
+        ofSetColor(236, 28, 36);
+         aerofrog82.drawString("Vimeo pong", ofGetWidth()/2 - 400, ofGetHeight()/2);
+         aerofrog82.drawString("Press button to start a new game", ofGetWidth()/2 - 800, ofGetHeight()/2 + 100);
         printf("startscreen \n");
     }
    
@@ -345,38 +344,38 @@ void testApp::draw() {
      //    printf("alpha: %d: \n", alpha);
         ofSetColor(238,58,130, alpha);
         ofSetRectMode(OF_RECTMODE_CORNER);
-        ofRect(0,0, ofGetWidth()/2, ofGetHeight());
-        ofSetColor(0);
-        verdana22.drawString("Left Player Tap!", ofGetWidth()/4, ofGetHeight()/2 + 100);
+        ofRect(bounds.x,bounds.y + 65, bounds.width/2, bounds.height - 130);
+        ofSetColor(255);
+        aerofrog82.drawString("Left Player Tap!", bounds.x + 100, bounds.y + bounds.height/2);
     }
         
     if(user1load && !user2load && players){
         ofSetColor(238,58,130, alpha);
         ofSetRectMode(OF_RECTMODE_CORNER);
-        ofRect(ofGetWidth()/2, 0, ofGetWidth()/2, ofGetHeight());
+        ofRect(bounds.x + bounds.width/2, bounds.y + 65, bounds.width/2, bounds.height - 130);
         ofSetColor(255);
-        user1.draw(ofGetWidth()/4, ofGetWidth()/20, 100, 100);
-          ofSetColor(0);
-        verdana22.drawString("Right Player Tap!", ofGetWidth()/4 + ofGetWidth()/2, ofGetHeight()/2 + 100);
+        user1.draw(bounds.x + bounds.width/4 - 100, bounds.height/2, 100, 100);
+        aerofrog82.drawString(username1, bounds.x + bounds.width/4 - 200, bounds.y + bounds.height/2 + 120);
+          ofSetColor(255);
+        aerofrog82.drawString("Right Player Tap!", bounds.x + bounds.width/2 + 100, bounds.y + bounds.height/2);
         }
     
         if(user1load &&  user2load){
         countdownnumbool = true;
         ofSetColor(255);
-        user1.draw(ofGetWidth()/4, ofGetWidth()/20, 100, 100);
-        user2.draw(ofGetWidth()/4 + ofGetWidth()/2, ofGetWidth()/20, 100, 100);
-        ofSetColor(0);
-        verdana22.drawString(username1, ofGetWidth()/4, ofGetWidth()/20 + user1.width + 20);
-        verdana22.drawString(username2, ofGetWidth()/4 + ofGetWidth()/2, ofGetWidth()/20 + user2.width + 20);
+        user1.draw(bounds.x + bounds.width/4 - 100, bounds.y + bounds.height/2 - 100, 100, 100);
+        user2.draw(bounds.x + bounds.width/4 - 100, + bounds.width/2, bounds.y + bounds.height/2 - 100, 100, 100);
+        aerofrog82.drawString(username1, bounds.x + bounds.width/4 - 200, bounds.y + bounds.height/2 + 150);
+        aerofrog82.drawString(username2, bounds.x + bounds.width/4 - 200 + bounds.width/2, bounds.y + bounds.height/2 + 150);
         if(countdownnum > 300)
-        verdana22.drawString("3", ofGetWidth()/2, ofGetWidth()/2 +  100);
+        aerofrog82.drawString("3", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if(countdownnum > 200 &&countdownnum < 300 )
-            verdana22.drawString("2", ofGetWidth()/2 , ofGetHeight()/2 + 100);
+            aerofrog82.drawString("2", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if(countdownnum > 100 && countdownnum < 200)
-            verdana22.drawString("1", ofGetWidth()/2, ofGetHeight()/2 + 100);
+            aerofrog82.drawString("1", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if(countdownnum > 0 && countdownnum < 100)
-            verdana22.drawString("GO!", ofGetWidth()/2, ofGetHeight()/2 + 100);
-        if (countdownnum == 0){
+            aerofrog82.drawString("GO!", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
+        if (countdownnum == 0 && countdownnumbool){
             countdownnumbool = false;
             startGame();
             drawusers = true;
@@ -402,7 +401,7 @@ void testApp::draw() {
 	for(int i=0; i<paddles.size(); i++) {
 		ofFill();
 		Data * data = (Data*)paddles[i].getData();
-        ofSetHexColor(0x4ccae9);
+        ofSetColor(236, 28, 36);
 		paddles[i].draw();
 	}
     
@@ -416,31 +415,26 @@ void testApp::draw() {
     
     if (score1 > 4 && counter < 200) {
         ofSetColor(245, 58, 135);
-        verdana22.drawString("PLAYER ONE WINS", ofGetWidth()/2, ofGetHeight()/2);        
+        aerofrog82.drawString("PLAYER ONE WINS", bounds.width, bounds.height/4);        
         counter++;
     }
     if (score2 > 4 && counter < 200) {
         ofSetColor(245, 58, 135);
-        verdana22.drawString("PLAYER TWO WINS", ofGetWidth()/2, ofGetHeight()/2);
+        aerofrog82.drawString("PLAYER TWO WINS", bounds.width, bounds.height/4);
         counter++;
         }
     }
 
-   	ofSetColor(255, 255, 255);
+   	ofSetColor(236, 28, 36);
     
     if (drawusers){
-    user1.draw(50, 20, 40,40);
-    verdana22.drawString(ofToString(score1, 1), 100,20);
-    verdana22.drawString(ofToString(score2, 1), ofGetWidth() - 50,20);
-    user2.draw(ofGetWidth()-120, 20, 40,40);
+    aerofrog82.drawString("SCORE " + ofToString(score1, 1), bounds.x+100, bounds.y +65);
+    aerofrog82.drawString("SCORE " + ofToString(score2, 1), bounds.x + bounds.width/2 + 100, bounds.y +65);
+    ofSetColor(255);
+    user1.draw(bounds.x+ 30, bounds.y+25, 40,40);
+    user2.draw(bounds.x+ 30 + bounds.width/2, bounds.y+25, 40,40);
     }
 
-	string info = "";
-	info += "FPS: "+ofToString(ofGetFrameRate(), 1)+"\n";
-    info += "Player 1 score: "+ofToString(score1, 1)+"\n";
-    info += "Player 2 score: "+ofToString(score2, 1)+"\n";
-	ofSetHexColor(0x444342);
-	ofDrawBitmapString(info, 30, 30);
 }
 
 //--------------------------------------------------------------
@@ -489,7 +483,7 @@ void testApp::startGame(){
     startGameBool = true;
     ofxBox2dRect paddle1;
     paddle1.setPhysics(0.1, 1.0, 0.0);
-    paddle1.setup(box2d.getWorld(), 0, 0, 10, ofGetHeight()/4, b2_kinematicBody);
+    paddle1.setup(box2d.getWorld(), bounds.x + 40, bounds.y, 20, bounds.height/8, b2_kinematicBody);
     paddle1.setData(new Data());
     //  paddle1.body->SetUserData(paddle1);
     Data * sd1 = (Data*)paddle1.getData();
@@ -500,7 +494,7 @@ void testApp::startGame(){
     
     ofxBox2dRect paddle2;
     paddle2.setPhysics(0.1, 1.0, 0.0);
-    paddle2.setup(box2d.getWorld(), ofGetWidth(), 0, 10, ofGetHeight()/4, b2_kinematicBody);
+    paddle2.setup(box2d.getWorld(), bounds.x + bounds.width - 40, bounds.y, 20, bounds.height/8, b2_kinematicBody);
     //   paddle2.body->SetUserData(paddle2);
     paddle2.setData(new Data());
     Data * sd2 = (Data*)paddle2.getData();
@@ -520,7 +514,7 @@ void testApp::startGame(){
 void testApp::newBall(){
     ofxBox2dCircle  c;
     c.setPhysics(0.1, 1.0, 0.0);
-    c.setup(box2d.getWorld(), ofGetWidth()/2, ofGetHeight()/2, 30);
+    c.setup(box2d.getWorld(), bounds.x + bounds.width/2, bounds.y + bounds.height/2, 30);
     float sgn = ofRandom(-1, 1);
     float vx = copysign(20,sgn);
     c.setVelocity(vx, 0);

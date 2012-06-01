@@ -10,7 +10,7 @@
 #define N_SOUNDS 5
 // listen on port 12345
 //port is 9002 at nyu
-#define PORT 9001 
+//#define PORT 9001 
 #define NUM_MSG_STRINGS 20
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,8 +166,9 @@ public:
     vector		<NominatedVideo>	nomvideos;
     vector		<ofVideoPlayer*>	wvideos;
     vector		<ofVideoPlayer*>	nvideos;
-    ofTrueTypeFont	verdana22;
-    ofImage vimeologo;
+    ofRectangle bounds;
+    ofTrueTypeFont	aerofrog82;
+    ofImage vimeologo, backgroundimg;
     int score1, score2, counter, joystick1, joystick2, mapped_joystick1, mapped_joystick2, alpha,  alphaincrement, whichuser, countdownnum, newballcount ;
     ofImage user1, user2;
     ofxOscSender sender1, sender2;
