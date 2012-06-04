@@ -20,10 +20,14 @@ void testApp::setup() {
     newballcount = 0;
     alpha = 125;
     alphaincrement = 1;
-    aerofrog82.loadFont("aerofrog.ttf", 82, true, true);
-	aerofrog82.setLineHeight(18.0f);
-	aerofrog82.setLetterSpacing(1.037);
-    ofEnableAlphaBlending();
+    visitor82.loadFont("visitor1.ttf", 82, true, true);
+	visitor82.setLineHeight(18.0f);
+	visitor82.setLetterSpacing(1.037);
+
+    visitor42.loadFont("visitor1.ttf", 48, true, true);
+	visitor42.setLineHeight(18.0f);
+	visitor42.setLetterSpacing(1.037);
+ofEnableAlphaBlending();
 	box2d.init();
 	box2d.setGravity(0, 10);
     bounds.set(765, 77, 1820, 920);
@@ -41,29 +45,31 @@ void testApp::setup() {
 
         vimeologo.loadImage("images/vimeo_logo.png");
     backgroundimg.loadImage("images/vimearcadeL.png");
-   
-    for(int i=0; i< 13; i++){
-        ofVideoPlayer * v = new ofVideoPlayer();
-        v->loadMovie("movies/fingers" + ofToString(i) +".mov");
-        v->play();
-        wvideos.push_back(v);
-    }
-
-
     
-    for(int i=0; i < 13; i++){
-       WinningVideo v;
-        v.setPhysics(1.0, 0.5, 0.3);
-       // v.body->SetUserData(v);
-        v.setup(box2d.getWorld(), float(bounds.x +i*bounds.width/13 + 80), float(ofRandom(bounds.y + 100, bounds.height - 130)), 40,40, b2_staticBody);
-        v.setupTheCustomData();
-        v.movie = wvideos[i];
-        winningvideos.push_back(v);
-         printf("right position \n", winningvideos[i].getPosition().x);
-        
-    }
+    ofxBox2dRect paddle1;
+    paddle1.setPhysics(0.1, 1.0, 0.0);
+    paddle1.setup(box2d.getWorld(), bounds.x + 40, bounds.y, 20, bounds.height/8, b2_kinematicBody);
+    paddle1.setData(new Data());
+    //  paddle1.body->SetUserData(paddle1);
+    Data * sd1 = (Data*)paddle1.getData();
+    sd1->soundID = ofRandom(0, N_SOUNDS);
+    sd1->hit	= false;		
+    sd1->type = 1;
+    paddles.push_back(paddle1);	
     
+    ofxBox2dRect paddle2;
+    paddle2.setPhysics(0.1, 1.0, 0.0);
+    paddle2.setup(box2d.getWorld(), bounds.x + bounds.width - 30, bounds.y, 20, bounds.height/8, b2_kinematicBody);
+    //   paddle2.body->SetUserData(paddle2);
+    paddle2.setData(new Data());
+    Data * sd2 = (Data*)paddle2.getData();
+    sd2->soundID = ofRandom(0, N_SOUNDS);
+    sd2->hit	= false;	
+	sd2->type = 1;
+    paddles.push_back(paddle2);	
+
    
+       
    
 }
     
@@ -138,11 +144,35 @@ void testApp::update() {
             printf("got a user!");
             loaduser = true;
         }
-        if ( m.getAddress() == "/start") {
-            startScreen = false;
-            players = true;
-
+        
+        if ( m.getAddress() == "/leftshoot")
+		{
+            if(!startScreen && players){
+                user = "images/guest.jpg";
+                username = "Guest";
+                loaduser = true;
+            }
+            if(startScreen){
+                startScreen = false;
+                players = true;
+                break;
+            }
+            
         }
+        if ( m.getAddress() == "/rightshoot") {
+            if(!startScreen && players){
+                user = "images/guest.jpg";
+                username = "Guest";
+                loaduser = true;
+            }
+            if(startScreen){
+                startScreen = false;
+                players = true;
+                break;
+            }
+                       
+        }
+
     }
     if(loaduser && players && whichuser == 0){
         user1.loadImage(user);
@@ -184,8 +214,8 @@ void testApp::update() {
     }
     
    //MOVE THE PADDLES
-        mapped_joystick1 = int(ofMap(joystick1, 0, 360, bounds.y + 65, bounds.y+ bounds.height - 130));
-        mapped_joystick2 = int(ofMap(joystick2, 0, 360, bounds.y + 65, bounds.y+ bounds.height - 130));
+        mapped_joystick1 = int(ofMap(joystick1, 0, 360, bounds.y + 77 + paddles[0].getHeight()/2 , bounds.y+ bounds.height - 77 - paddles[0].getHeight()/2)); 
+        mapped_joystick2 = int(ofMap(joystick2, 0, 360, bounds.y + 77 + paddles[1].getHeight()/2, bounds.y+ bounds.height - 77 - paddles[1].getHeight()/2));
       
             b2Vec2 pos1 =  paddles[0].body->GetPosition();
             b2Vec2 target1 = b2Vec2(pos1.x, mapped_joystick1/OFX_BOX2D_SCALE);
@@ -260,7 +290,7 @@ void testApp::update() {
                 nvideos.push_back(vid);
                 NominatedVideo v;
                 v.setPhysics(1.0, 0.0, 0.5);
-                v.setup(box2d.getWorld(), winningvideos[i].getPosition().x, winningvideos[i].getPosition().y, 20, 20, b2_dynamicBody);
+                v.setup(box2d.getWorld(), winningvideos[i].getPosition().x, winningvideos[i].getPosition().y, 30, 30, b2_dynamicBody);
                 v.setupTheCustomData();
                 v.setVelocity(int(ofRandom(0, 5)), int(ofRandom(0, 5)));
                 v.movie = vid;
@@ -330,53 +360,54 @@ void testApp::draw() {
     ofSetRectMode(OF_RECTMODE_CORNER);
     backgroundimg.draw(0,0, ofGetWidth(), ofGetHeight());
     ofSetColor(0, 173, 238, 125);
-    ofRect(bounds.x, bounds.y, bounds.width, 65);
-    ofRect(bounds.x, bounds.y + bounds.height-65, bounds.width, 65);
-           
+               
     if(startScreen){
         ofSetColor(236, 28, 36);
-         aerofrog82.drawString("Vimeo pong", ofGetWidth()/2 - 400, ofGetHeight()/2);
-         aerofrog82.drawString("Press button to start a new game", ofGetWidth()/2 - 800, ofGetHeight()/2 + 100);
-        printf("startscreen \n");
+        visitor82.drawString("VFA PONG", bounds.x + bounds.width/2 - visitor82.stringWidth("VFA PONG")/2, bounds.y + bounds.height/2);
+        visitor82.drawString("Press button to start a new game",  bounds.x + bounds.width/2 - 775,bounds.y + bounds.height/2 + 100);        printf("startscreen \n");
     }
    
     if(!user1load && players && !startScreen){
-     //    printf("alpha: %d: \n", alpha);
-        ofSetColor(238,58,130, alpha);
+        //    printf("alpha: %d: \n", alpha);
+        ofSetColor(0, 173, 238, alpha);
         ofSetRectMode(OF_RECTMODE_CORNER);
-        ofRect(bounds.x,bounds.y + 65, bounds.width/2, bounds.height - 130);
+        ofRect(bounds.x,bounds.y + 78, bounds.width/2, bounds.height - 78);
         ofSetColor(255);
-        aerofrog82.drawString("Left Player Tap!", bounds.x + 100, bounds.y + bounds.height/2);
+        visitor82.drawString("Left Player Tap!", bounds.x + 80, bounds.y + bounds.height/2);
+        visitor42.drawString("Press button to play as guest!", bounds.x + 30, bounds.y + bounds.height/2 + 100);
     }
-        
-    if(user1load && !user2load && players){
-        ofSetColor(238,58,130, alpha);
-        ofSetRectMode(OF_RECTMODE_CORNER);
-        ofRect(bounds.x + bounds.width/2, bounds.y + 65, bounds.width/2, bounds.height - 130);
-        ofSetColor(255);
-        user1.draw(bounds.x + bounds.width/4 - 100, bounds.height/2, 100, 100);
-        aerofrog82.drawString(username1, bounds.x + bounds.width/4 - 200, bounds.y + bounds.height/2 + 120);
-          ofSetColor(255);
-        aerofrog82.drawString("Right Player Tap!", bounds.x + bounds.width/2 + 100, bounds.y + bounds.height/2);
-        }
     
-        if(user1load &&  user2load){
+    if(user1load && !user2load && players){
+        ofSetColor(0, 173, 238, alpha);
+        ofSetRectMode(OF_RECTMODE_CORNER);
+        ofRect(bounds.x + bounds.width/2, bounds.y + 78, bounds.width/2, bounds.height - 78);
+        ofSetColor(255);
+        user1.draw(bounds.x + bounds.width/4 - 50, bounds.height/2, 100, 100);
+        visitor82.drawString(username1, bounds.x + bounds.width/4 - visitor82.stringWidth(username1)/2, bounds.y + bounds.height/2 + 120);
+        ofSetColor(255);
+        visitor82.drawString("Right Player Tap!", bounds.x + bounds.width/2 + 80, bounds.y + bounds.height/2);
+        visitor42.drawString("Press button to play as guest", bounds.x + 30 + bounds.width/2, bounds.y + bounds.height/2 + 100);
+        
+    }
+    
+    if(user1load &&  user2load){
         countdownnumbool = true;
         ofSetColor(255);
-        user1.draw(bounds.x + bounds.width/4 - 100, bounds.y + bounds.height/2 - 100, 100, 100);
-        user2.draw(bounds.x + bounds.width/4 - 100, + bounds.width/2, bounds.y + bounds.height/2 - 100, 100, 100);
-        aerofrog82.drawString(username1, bounds.x + bounds.width/4 - 200, bounds.y + bounds.height/2 + 150);
-        aerofrog82.drawString(username2, bounds.x + bounds.width/4 - 200 + bounds.width/2, bounds.y + bounds.height/2 + 150);
+        user1.draw(bounds.x + bounds.width/4 - 50, bounds.height/2, 100, 100);
+        user2.draw(bounds.x + bounds.width/4 - 50 + bounds.width/2, bounds.height/2, 100, 100);
+        visitor82.drawString(username1, bounds.x + bounds.width/4 - visitor82.stringWidth(username1)/2, bounds.y + bounds.height/2 + 120);
+        visitor82.drawString(username2, bounds.x + bounds.width/4 - visitor82.stringWidth(username2)/2 + bounds.width/2, bounds.y + bounds.height/2 + 120);
         if(countdownnum > 300)
-        aerofrog82.drawString("3", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
+            visitor82.drawString("3", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if(countdownnum > 200 &&countdownnum < 300 )
-            aerofrog82.drawString("2", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
+            visitor82.drawString("2", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if(countdownnum > 100 && countdownnum < 200)
-            aerofrog82.drawString("1", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
+            visitor82.drawString("1", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if(countdownnum > 0 && countdownnum < 100)
-            aerofrog82.drawString("GO!", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
+            visitor82.drawString("GO!", bounds.x + bounds.width/2, bounds.y + bounds.height/2);
         if (countdownnum == 0 && countdownnumbool){
             countdownnumbool = false;
+            countdownnum = 400;
             startGame();
             drawusers = true;
             players = false;
@@ -414,26 +445,49 @@ void testApp::draw() {
 	}
     
     if (score1 > 4 && counter < 200) {
-        ofSetColor(245, 58, 135);
-        aerofrog82.drawString("PLAYER ONE WINS", bounds.width, bounds.height/4);        
+        ofSetColor(255,221,21);
+        visitor82.drawString("YOU WIN!", bounds.x + bounds.width/4 - visitor82.stringWidth("YOU WIN!")/2, bounds.y + bounds.height/2 - 120);
+        visitor82.drawString("YOU LOSE!", bounds.x + bounds.width/4 - visitor82.stringWidth("YOU LOSE!")/2 + bounds.width/2, bounds.y + bounds.height/2 - 120);        
+        ofSetColor(255);
+        ofSetRectMode(OF_RECTMODE_CORNER);
+        user1.draw(bounds.x + bounds.width/4 - 50,  bounds.height/2 + 20, 100, 100);
+        user2.draw(bounds.x + bounds.width/4 - 50 + bounds.width/2,  bounds.height/2 + 20, 100, 100);
+        ofSetColor(255,221,21);
+        visitor82.drawString(username1, bounds.x + bounds.width/4 - visitor82.stringWidth(username1)/2, bounds.y + bounds.height/2 + 120);
+        visitor82.drawString(username2, bounds.x + bounds.width/4 - visitor82.stringWidth(username2)/2 + bounds.width/2, bounds.y + bounds.height/2 + 120);
+        
         counter++;
+        printf("counter: %d\n", counter);
+
     }
     if (score2 > 4 && counter < 200) {
-        ofSetColor(245, 58, 135);
-        aerofrog82.drawString("PLAYER TWO WINS", bounds.width, bounds.height/4);
+        ofSetColor(255,221,21);
+        visitor82.drawString("YOU LOSE!", bounds.x + bounds.width/4 - visitor82.stringWidth("YOU LOSE!")/2, bounds.y + bounds.height/2 - 120);
+        visitor82.drawString("YOU WIN!", bounds.x + bounds.width/4 - visitor82.stringWidth("YOU WIN!")/2 + bounds.width/2, bounds.y + bounds.height/2 - 120);        
+        ofSetColor(255);
+        ofSetRectMode(OF_RECTMODE_CORNER);
+        user1.draw(bounds.x + bounds.width/4 - 50,  bounds.height/2 + 20, 100, 100);
+        user2.draw(bounds.x + bounds.width/4 - 50 + bounds.width/2,  bounds.height/2 + 20, 100, 100);
+        ofSetColor(255,221,21);
+        visitor82.drawString(username1, bounds.x + bounds.width/4 - visitor82.stringWidth(username1)/2, bounds.y + bounds.height/2 + 120);
+        visitor82.drawString(username2, bounds.x + bounds.width/4 - visitor82.stringWidth(username2)/2 + bounds.width/2, bounds.y + bounds.height/2 + 120);
+        
         counter++;
-        }
+        printf("counter: %d\n", counter);
+
     }
 
    	ofSetColor(236, 28, 36);
     
     if (drawusers){
-    aerofrog82.drawString("SCORE " + ofToString(score1, 1), bounds.x+100, bounds.y +65);
-    aerofrog82.drawString("SCORE " + ofToString(score2, 1), bounds.x + bounds.width/2 + 100, bounds.y +65);
+    visitor82.drawString("SCORE " + ofToString(score1, 1), bounds.x+100, bounds.y +65);
+    visitor82.drawString("SCORE " + ofToString(score2, 1), bounds.x + bounds.width/2 + 100, bounds.y +65);
     ofSetColor(255);
     user1.draw(bounds.x+ 30, bounds.y+25, 40,40);
     user2.draw(bounds.x+ 30 + bounds.width/2, bounds.y+25, 40,40);
     }
+    }
+    
 
 }
 
@@ -451,6 +505,8 @@ void testApp::keyPressed(int key) {
     
     
    }
+
+
 
 //--------------------------------------------------------------
 void testApp::keyReleased(int key) {
@@ -481,34 +537,35 @@ void testApp::resized(int w, int h){
 void testApp::startGame(){
     printf("starting new game");
     startGameBool = true;
-    ofxBox2dRect paddle1;
-    paddle1.setPhysics(0.1, 1.0, 0.0);
-    paddle1.setup(box2d.getWorld(), bounds.x + 40, bounds.y, 20, bounds.height/8, b2_kinematicBody);
-    paddle1.setData(new Data());
-    //  paddle1.body->SetUserData(paddle1);
-    Data * sd1 = (Data*)paddle1.getData();
-    sd1->soundID = ofRandom(0, N_SOUNDS);
-    sd1->hit	= false;		
-    sd1->type = 1;
-    paddles.push_back(paddle1);	
-    
-    ofxBox2dRect paddle2;
-    paddle2.setPhysics(0.1, 1.0, 0.0);
-    paddle2.setup(box2d.getWorld(), bounds.x + bounds.width - 40, bounds.y, 20, bounds.height/8, b2_kinematicBody);
-    //   paddle2.body->SetUserData(paddle2);
-    paddle2.setData(new Data());
-    Data * sd2 = (Data*)paddle2.getData();
-    sd2->soundID = ofRandom(0, N_SOUNDS);
-    sd2->hit	= false;	
-	sd2->type = 1;
-    paddles.push_back(paddle2);	
-    
+        
     // load the 8 sfx soundfile
 	for (int i=0; i<N_SOUNDS; i++) {
 		sound[i].loadSound("sfx/"+ofToString(i)+".mp3");
 		sound[i].setMultiPlay(true);
 		sound[i].setLoop(false);
 	}
+    for(int i=0; i< 13; i++){
+        ofVideoPlayer * v = new ofVideoPlayer();
+        v->loadMovie("movies/fingers" + ofToString(i) +".mov");
+        v->play();
+        wvideos.push_back(v);
+    }
+    
+    
+    
+    for(int i=0; i < 13; i++){
+        WinningVideo v;
+        v.setPhysics(1.0, 0.5, 0.3);
+        // v.body->SetUserData(v);
+        v.setup(box2d.getWorld(), float(bounds.x +i*(bounds.width-240)/13 + 120), float(ofRandom(bounds.y + 140, bounds.height - 180)), 60,60, b2_staticBody);
+        v.setupTheCustomData();
+        v.movie = wvideos[i];
+        winningvideos.push_back(v);
+        printf("right position \n", winningvideos[i].getPosition().x);
+        
+    }
+    
+
 }
 
 void testApp::newBall(){

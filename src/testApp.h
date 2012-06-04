@@ -167,7 +167,7 @@ public:
     vector		<ofVideoPlayer*>	wvideos;
     vector		<ofVideoPlayer*>	nvideos;
     ofRectangle bounds;
-    ofTrueTypeFont	aerofrog82;
+    ofTrueTypeFont	visitor82, visitor42;
     ofImage vimeologo, backgroundimg;
     int score1, score2, counter, joystick1, joystick2, mapped_joystick1, mapped_joystick2, alpha,  alphaincrement, whichuser, countdownnum, newballcount ;
     ofImage user1, user2;
