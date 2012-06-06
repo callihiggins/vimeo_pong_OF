@@ -173,9 +173,11 @@ public:
     ofImage user1, user2;
     ofxOscSender sender1, sender2;
     ofxOscReceiver	receiver;
-    int port;
+    ofxOscSender sender;
+    int port, sendport;
     char * host;
-    string user, username, username1, username2;
+    char * sendhost;
+    string user, username, username1, username2, user1photo, user2photo;
     bool loaduser, user1load, user2load, drawusers;
     int paddleattraction;
     b2Vec2 pveloc;

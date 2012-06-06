@@ -9,6 +9,7 @@ void testApp::setup() {
     ofHideCursor();
     loadSettings("settings.xml");
 	receiver.setup( port );
+    sender.setup( sendhost, sendport );
     whichuser = 0;
     loaduser = false;
     drawusers = false;
@@ -30,7 +31,7 @@ void testApp::setup() {
 ofEnableAlphaBlending();
 	box2d.init();
 	box2d.setGravity(0, 10);
-    bounds.set(765, 77, 1820, 920);
+    bounds.set(773, 77, 1830, 920);
     box2d.createBounds(bounds);
 	//box2d.createGround();
 	box2d.setFPS(30.0);
@@ -176,18 +177,33 @@ void testApp::update() {
     }
     if(loaduser && players && whichuser == 0){
         user1.loadImage(user);
+        user1photo = user;
         username1 = username;
         whichuser = 1;
         user1load = true;
         loaduser = false;
+        if (!user1photo.compare("images/guest.jpg")){
+            ofxOscMessage m;
+            m.setAddress( "/user" );
+            m.addStringArg( user1photo );
+            sender.sendMessage( m );
+        }
     }
     
     if(loaduser && players && whichuser == 1){
         user2.loadImage(user);
+        user2photo = user;
         username2 = username;
         whichuser = 0;
         user2load = true;
         loaduser = false;
+        if (!user2photo.compare("images/guest.jpg")){
+            ofxOscMessage m;
+            m.setAddress( "/user" );
+            m.addStringArg( user2photo );
+            sender.sendMessage( m );
+        }
+
     }
 
         alpha  = alpha + alphaincrement;
@@ -371,7 +387,7 @@ void testApp::draw() {
         //    printf("alpha: %d: \n", alpha);
         ofSetColor(0, 173, 238, alpha);
         ofSetRectMode(OF_RECTMODE_CORNER);
-        ofRect(bounds.x,bounds.y + 78, bounds.width/2, bounds.height - 78);
+        ofRect(bounds.x,bounds.y + 86, bounds.width/2, bounds.height - 86);
         ofSetColor(255);
         visitor82.drawString("Left Player Tap!", bounds.x + 80, bounds.y + bounds.height/2);
         visitor42.drawString("Press button to play as guest!", bounds.x + 30, bounds.y + bounds.height/2 + 100);
@@ -380,7 +396,7 @@ void testApp::draw() {
     if(user1load && !user2load && players){
         ofSetColor(0, 173, 238, alpha);
         ofSetRectMode(OF_RECTMODE_CORNER);
-        ofRect(bounds.x + bounds.width/2, bounds.y + 78, bounds.width/2, bounds.height - 78);
+        ofRect(bounds.x + bounds.width/2, bounds.y + 86, bounds.width/2, bounds.height - 86);
         ofSetColor(255);
         user1.draw(bounds.x + bounds.width/4 - 50, bounds.height/2, 100, 100);
         visitor82.drawString(username1, bounds.x + bounds.width/4 - visitor82.stringWidth(username1)/2, bounds.y + bounds.height/2 + 120);
@@ -457,7 +473,12 @@ void testApp::draw() {
         visitor82.drawString(username2, bounds.x + bounds.width/4 - visitor82.stringWidth(username2)/2 + bounds.width/2, bounds.y + bounds.height/2 + 120);
         
         counter++;
-        printf("counter: %d\n", counter);
+        if (!user1photo.compare("images/guest.jpg")){
+        ofxOscMessage m;
+		m.setAddress( "/user" );
+		m.addStringArg( user1photo );
+        sender.sendMessage( m );
+        }
 
     }
     if (score2 > 4 && counter < 200) {
@@ -473,18 +494,22 @@ void testApp::draw() {
         visitor82.drawString(username2, bounds.x + bounds.width/4 - visitor82.stringWidth(username2)/2 + bounds.width/2, bounds.y + bounds.height/2 + 120);
         
         counter++;
-        printf("counter: %d\n", counter);
-
+        if (!user2photo.compare("images/guest.jpg")){
+            ofxOscMessage m;
+            m.setAddress( "/user" );
+            m.addStringArg( user2photo );
+            sender.sendMessage( m );
+        }
     }
 
    	ofSetColor(236, 28, 36);
     
     if (drawusers){
-    visitor82.drawString("SCORE " + ofToString(score1, 1), bounds.x+100, bounds.y +65);
-    visitor82.drawString("SCORE " + ofToString(score2, 1), bounds.x + bounds.width/2 + 100, bounds.y +65);
+    visitor82.drawString("SCORE " + ofToString(score1, 1), bounds.x+120, bounds.y +65);
+    visitor82.drawString("SCORE " + ofToString(score2, 1), bounds.x + bounds.width/2 + 120, bounds.y +65);
     ofSetColor(255);
-    user1.draw(bounds.x+ 30, bounds.y+25, 40,40);
-    user2.draw(bounds.x+ 30 + bounds.width/2, bounds.y+25, 40,40);
+    user1.draw(bounds.x+ 30, bounds.y+35, 80,80);
+    user2.draw(bounds.x+ 30 + bounds.width/2, bounds.y+35, 80,80);
     }
     }
     
@@ -546,7 +571,7 @@ void testApp::startGame(){
 	}
     for(int i=0; i< 13; i++){
         ofVideoPlayer * v = new ofVideoPlayer();
-        v->loadMovie("movies/fingers" + ofToString(i) +".mov");
+        v->loadMovie("movies/winner" + ofToString(i) +".mov");
         v->play();
         wvideos.push_back(v);
     }
@@ -588,6 +613,7 @@ void testApp::newBall(){
 
 void testApp::loadSettings(string fileString){
 	string host_address;
+    string send_host_address;
 	string host_address1;
 	string host_address2;
 	string filename;
@@ -601,7 +627,12 @@ void testApp::loadSettings(string fileString){
 	host_address = xmlReader.getValue("settings:master:address","test",0);
 	port = xmlReader.getValue("settings:master:port",5204,0);
 	host = (char *) malloc(sizeof(char)*host_address.length());
-	strcpy(host, host_address.c_str());
+    strcpy(host, host_address.c_str());
+    
+    send_host_address = xmlReader.getValue("settings:send:address","test",0);
+    sendport = xmlReader.getValue("settings:send:port",5204,0);
+	sendhost = (char *) malloc(sizeof(char)*host_address.length());
+	strcpy(sendhost, send_host_address.c_str());
     
     
 	filename = xmlReader.getValue("settings:movie:","test",0);
